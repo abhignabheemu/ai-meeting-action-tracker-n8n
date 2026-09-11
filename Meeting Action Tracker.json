@@ -1,0 +1,465 @@
+{
+  "name": "Meeting Action Tracker",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -112
+      ],
+      "id": "9b4e7777-afb1-4833-a6a7-8ba6f11566d0",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3e987dd3-16a5-4804-bcd7-a3ac6e3e1ebd",
+              "name": "Meeting Notes",
+              "value": "John will update the homepage by Sep 20. Mary will prepare the QA report by Sep 25. Team agreed to review automation progress next week.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -368,
+        -112
+      ],
+      "id": "c166a1f3-620c-4fc1-931e-c9eeead578b5",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "@azure-openai-eus2/gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "@AZURE-OPENAI-EUS2/GPT-5-NANO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Extract action items.\n\nReturn ONLY JSON.\n\n[\n {\n  \"task\":\"\",\n  \"owner\":\"\",\n  \"due_date\":\"\"\n }\n]\n\nMeeting Notes:\n\n{{ $json[\"Meeting Notes\"] }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -144,
+        -112
+      ],
+      "id": "7e9574a7-0281-4eeb-8676-2596db986d77",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XllD42nYNC8zcHNb",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.output[0].content[0].text;\n\nconst tasks = JSON.parse(text);\n\nreturn tasks.map(task => ({\n  json: {\n    Task: task.task,\n    Owner: task.owner,\n    DueDate: task.due_date,\n    Status: \"Pending\",\n    CreatedDate: new Date().toISOString()\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -112
+      ],
+      "id": "ca528f33-bda4-4bf8-b834-1b67e0e640c5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1hYkGXjoFwQUy5gVPn5_7CK7eBip-gIwrpsbWlfgHCyw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hYkGXjoFwQUy5gVPn5_7CK7eBip-gIwrpsbWlfgHCyw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Task": "={{$json.Task}}",
+            "Owner": "={{$json.Owner}}",
+            "DueDate": "={{$json.DueDate}}",
+            "Status": "={{$json.Status}}",
+            "CreatedDate": "={{$json.CreatedDate}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Task",
+              "displayName": "Task",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DueDate",
+              "displayName": "DueDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CreatedDate",
+              "displayName": "CreatedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -608,
+        128
+      ],
+      "id": "6fdfdccc-cb72-4906-8c52-2eaa78a82b66",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZBDndmFTGSSVkjhF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "abaitesting83@gmail.com",
+        "subject": "New Meeting Action Items",
+        "message": "={{$json.emailBody}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        128
+      ],
+      "id": "4b179a77-b49c-4d33-8adf-7f339bbc5311",
+      "name": "Send a message",
+      "webhookId": "1ff925f1-69bf-4b96-bd41-c2e34e449789",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lzKX6i83ov2KG1m0",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let html = `\n<h2>Meeting Action Items</h2>\n<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\">\n<tr>\n<th>Task</th>\n<th>Owner</th>\n<th>Due Date</th>\n<th>Status</th>\n</tr>\n`;\n\nfor (const item of $input.all()) {\n  html += `\n  <tr>\n    <td>${item.json.Task}</td>\n    <td>${item.json.Owner}</td>\n    <td>${item.json.DueDate}</td>\n    <td>${item.json.Status}</td>\n  </tr>\n  `;\n}\n\nhtml += `</table>`;\n\nreturn [{\n  json: {\n    emailBody: html\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        128
+      ],
+      "id": "12d5f114-0358-4f67-a901-96f66434c5ff",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1hYkGXjoFwQUy5gVPn5_7CK7eBip-gIwrpsbWlfgHCyw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hYkGXjoFwQUy5gVPn5_7CK7eBip-gIwrpsbWlfgHCyw/edit#gid=0"
+        },
+        "clear": "specificRange",
+        "range": "A2:E1000"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        352
+      ],
+      "id": "3bc028b9-37c1-492f-b7c8-00098b1c3feb",
+      "name": "Clear sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ZBDndmFTGSSVkjhF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "53475a15-a63f-4706-92f3-09ec03158a34",
+              "name": "Approval",
+              "value": "yes",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -384,
+        128
+      ],
+      "id": "b3d753c1-982b-4c12-94eb-53e2e548d768",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8c58f15c-97ec-4ca2-a504-d75690c7635d",
+              "leftValue": "={{$json.Approval}}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "178f315f-8e8d-4583-8242-c0458fdfb80d",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        128
+      ],
+      "id": "b39b23e3-550e-41b0-b820-ac507c9da151",
+      "name": "If"
+    }
+  ],
+  "pinData": {
+    "Message a model": [
+      {
+        "json": {
+          "output": [
+            {
+              "id": "msg_00b8f7e9ec789da1006aa40de17af48190b7211e3f330a5b28",
+              "type": "message",
+              "status": "completed",
+              "content": [
+                {
+                  "type": "output_text",
+                  "annotations": [],
+                  "logprobs": [],
+                  "text": "[\n  {\n    \"task\": \"Update the homepage\",\n    \"owner\": \"John\",\n    \"due_date\": \"Sep 20\"\n  },\n  {\n    \"task\": \"Prepare the QA report\",\n    \"owner\": \"Mary\",\n    \"due_date\": \"Sep 25\"\n  },\n  {\n    \"task\": \"Review automation progress\",\n    \"owner\": \"Team\",\n    \"due_date\": \"Next week\"\n  }\n]"
+                }
+              ],
+              "role": "assistant"
+            }
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Clear sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clear sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d60e8520-6c89-4aed-80fb-2a84f2747ed0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5e446c6605e8ba214e481d588c3a580f9b1172474926cbf1ee29167885eedeb3"
+  },
+  "nodeGroups": [],
+  "id": "697ZfX54iJDprcpp",
+  "tags": []
+}
